@@ -46,12 +46,12 @@ Add this snippet to your `claude_desktop_config.json`:
   "mcpServers": {
     "sscmfi-bond-mcp": {
       "command": "npx",
-      "args": ["-y", "https://github.com/sscmfi/sscmfi-bond-mcp/archive/refs/heads/main.tar.gz"]
+      "args": ["-y", "github:sscmfi/sscmfi-bond-mcp"]
     }
   }
 }
 ```
-*(Ensure `github:sscmfi/sscmfi-bond-mcp/index.ts` matches your repository structure.)*
+*(This command pulls the verified configuration directly from your repository)*
 
 ---
 
@@ -73,8 +73,8 @@ If you prefer to run the server from a local folder on your machine:
 ```
 
 ### 💻 Other Clients
-*   **Claude Code (CLI)**: `claude mcp add sscmfi-bond-mcp -- npx -y tsx github:sscmfi/sscmfi-bond-mcp/index.ts`
-*   **Cursor / Windsurf**: Add as a "command" type using the same `npx` string above.
+*   **Claude Code (CLI)**: `claude mcp add sscmfi-bond-mcp -- npx -y github:sscmfi/sscmfi-bond-mcp`
+*   **Cursor / Windsurf**: Add as a "command" type using: `npx -y github:sscmfi/sscmfi-bond-mcp`
 
 ---
 
