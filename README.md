@@ -19,10 +19,11 @@ Calculates the primary analytical values for any standard periodic coupon securi
 *   **Inputs**: Security Type (Treasury, Corporate, etc.), Maturity Date, Coupon Rate, Settlement Date, and either Price (to find Yield) or Yield (to find Price).
 *   **Outputs**: Clean Price, Yield-to-Worst (including call schedule support), Accrued Interest, and Trading Price.
 
-## Features (Demo Version)
-*   **Price to Yield**: Calculate yield based on price and security parameters.
-*   **Yield to Price**: Calculate price based on a target yield.
-*   **Accrued Interest**: Automatically calculates Accrued Interest for the trade.
+## Features (Full Fidelity)
+*   **Price & Yield Analytics**: High-precision conversions between price and yield.
+*   **Institutional Transparency**: Unlike generic financial tools, this server returns its **Industry Convention Assumptions** (Day Count, Frequency, EOM) so the AI can explain *why* it reached a specific result.
+*   **Redemption Intelligence**: Automatically detects whether a result is a Yield-to-Maturity or Yield-to-Call (Worst) and informs the AI.
+*   **Accrued Interest**: Professional-grade accrued interest calculations for all supported security types.
 *   **Supported Security Types**: Treasury Bonds, Corporate Bonds, Agency Bonds, Municipal Bonds, and CDs.
 
 ## Example Prompts
@@ -49,7 +50,7 @@ Add this snippet to your `claude_desktop_config.json`:
   }
 }
 ```
-*(Replace `YOUR-USERNAME` with your GitHub username after uploading.)*
+*(Ensure `github:sscmfi/sscmfi-bond-mcp/index.ts` matches your repository structure.)*
 
 ---
 

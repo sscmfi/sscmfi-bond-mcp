@@ -44,7 +44,7 @@ const PERIODIC_TOOL = {
             },
             maturityDate: {
                 type: "string",
-                description: "Required. The date the bond expires (MM/DD/YYYY)."
+                description: "Required. The date the bond expires. Use MM/DD/YYYY format for maximum accuracy."
             },
             couponRate: {
                 type: "number",
@@ -61,7 +61,7 @@ const PERIODIC_TOOL = {
             },
             settlementDate: {
                 type: "string",
-                description: "Required. The date the money actually changes hands (MM/DD/YYYY)."
+                description: "Required. The date the money actually changes hands. Use MM/DD/YYYY format for maximum accuracy."
             },
             callSchedule: {
                 type: "array",
@@ -93,26 +93,23 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         try {
             const { securityType, maturityDate, couponRate, givenType, givenValue, settlementDate, callSchedule } = request.params.arguments as any;
 
-            // Construct the internal SSCMFI JSON format
+            // Flatten the payload for the SSCMFI Resolver
             const payload = {
-                securityDefinition: {
-                    securityType: securityType,
-                    paymentType: "periodic",
-                    maturityDate: maturityDate,
-                    couponRate: couponRate,
-                    callSchedule: callSchedule // Mapped by PHP proxy to callRedemptions
-                },
-                tradeDefinition: {
-                    settlementDate: settlementDate || new Date().toLocaleDateString('en-US'),
-                    givenType: givenType,
-                    givenValue: givenValue,
-                }
+                securityType,
+                maturityDate,
+                couponRate,
+                givenType,
+                givenValue,
+                settlementDate,
+                callSchedule
             };
 
             const response = await axios.post(API_URL, payload);
 
-            // Simplify the response for the LLM
+            // Simplify the response for the LLM while retaining institutional fidelity
             const result = response.data.data.calculationTo[0];
+            const appliedDefaults = response.data.metadata?.appliedDefaults || {};
+
             return {
                 content: [
                     {
@@ -122,17 +119,24 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                             yield: result.PY.yield,
                             accruedInterest: result.PY.ai,
                             totalSettlement: result.PY.price + (result.PY.ai || 0),
-                            settlementDate: payload.tradeDefinition.settlementDate
+                            settlementDate: payload.settlementDate,
+                            redemptionInfo: result.redemptionInfo,
+                            industryConventionAssumptions: appliedDefaults
                         }, null, 2),
                     },
                 ],
             };
         } catch (error: any) {
+            // Provide a detailed error message from the SSCMFI Engine if available
+            const engineError = error.response?.data?.errorInfo?.errorMessage;
+            const apiError = error.response?.data?.error || error.response?.data?.message;
+            const detail = engineError || apiError || error.message;
+
             return {
                 content: [
                     {
                         type: "text",
-                        text: `Error: ${error.response?.data?.error || error.message}`,
+                        text: `Error from SSCMFI Engine: ${detail}`,
                     },
                 ],
                 isError: true,
@@ -151,5 +155,6 @@ async function main() {
 
 main().catch((error) => {
     console.error("Fatal error in main():", error);
+    // @ts-ignore
     process.exit(1);
 });

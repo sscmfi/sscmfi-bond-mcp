@@ -71,7 +71,8 @@ components:
             (Standard types like Discount, Interest at Maturity (IAM), Stepped, Multistep, Payment-In-Kind (PIK), and Part-PIK are part of the full SSCMFI specification but are not active for this API key).
         maturityDate:
           type: string
-          description: The date the principal is due. (AI: Ensure this is in the future relative to settlement).
+          format: date
+          description: The date the principal is due (MM/DD/YYYY). (AI: Ensure this is in the future relative to settlement).
         couponRate:
           type: number
           description: Annual coupon rate as a percentage (e.g., 5.0 for 5%). Use 0 for zero coupon bonds.
@@ -129,6 +130,14 @@ components:
               items:
                 type: object
                 properties:
+                  redemptionInfo:
+                    type: object
+                    description: Information about the maturity/call date used for the yield-to-worst calculation.
+                    properties:
+                      redemptionType: { type: string, enum: [Maturity, Call, Put] }
+                      redemptionDate: { type: string, format: date, description: "MM/DD/YYYY" }
+                      redemptionValue: { type: number, description: The redemption price used. }
+                      worstIndicator: { type: string, description: "e.g., 'Worst'" }
                   PY:
                     type: object
                     description: The primary financial results.
@@ -136,4 +145,14 @@ components:
                       price: { type: number, description: The clean price per 100 par. }
                       yield: { type: number, description: The yield to worst as a percentage. }
                       ai: { type: number, description: Accrued Interest per 100 par. }
-                      tradingPrice: { type: number, description: The final price with rounding/truncation applied. }
+        metadata:
+          type: object
+          properties:
+            industryConventionAssumptions:
+              type: object
+              description: The institutional defaults applied by the resolver.
+              properties:
+                tradeDate: { type: string, format: date }
+                dayCountBasis: { type: string }
+                periodsPerYear: { type: string }
+                eomRule: { type: string }
