@@ -1,0 +1,139 @@
+openapi: 3.0.3
+info:
+  title: Standard Securities Calculation Methods Fixed Income (SSCMFI) Math Engine (AI-Native)
+  description: |
+    Industry standard, expert-level financial calculation engine for fixed income (bond) analytics. 
+    **AI Instructions:** Use these tools to perform high-precision bond math. 
+    Do not attempt to calculate accrued interest, yield, or price manually. 
+    Always rely on the engine for C-faithful, industry standard accuracy.
+  version: 1.1.0
+
+servers:
+  - url: https://api.sscmfi.com/api/sscmfiMCPAPI
+    description: Production MCP Proxy
+
+paths:
+  /:
+    post:
+      summary: Execute Bond Calculation
+      description: |
+        Primary endpoint for all bond calculations. 
+        **AI Hint**: This tool handles multiple security types (Treasury, agency, Corporate, Municipal, etc.). 
+        It applies intelligent defaults for Day Count and Frequency based on the `securityType` you provide.
+      operationId: calculateBond
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CalculationRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+components:
+  schemas:
+    CalculationRequest:
+      type: object
+      required: [securityDefinition, tradeDefinition]
+      properties:
+        securityDefinition:
+          $ref: '#/components/schemas/SecurityDefinition'
+        tradeDefinition:
+          $ref: '#/components/schemas/TradeDefinition'
+
+    SecurityDefinition:
+      type: object
+      description: |
+        Defines the bond's structure. 
+        **AI Hint**: If the user hasn't specified the `securityType` (e.g. Treasury, Corporate), you MUST ask them before calling this tool.
+      required: [securityType, maturityDate, couponRate]
+      properties:
+        securityType:
+          type: string
+          enum: [Treasury, Agency, Corporate, Municipal, CD]
+          description: |
+            Crucial for math accuracy. 
+            - **Treasury**: Usually uses Actual/Actual day count.
+            - **Corporate/Agency/Municipal**: Usually uses 30/360.
+            - **CD**: Usually uses Actual/360.
+        paymentType:
+          type: string
+          enum: [Periodic]
+          default: Periodic
+          description: |
+            The payment structure. 
+            **Demo Restriction**: Only 'Periodic' is supported in this environment. 
+            (Standard types like Discount, Interest at Maturity (IAM), Stepped, Multistep, Payment-In-Kind (PIK), and Part-PIK are part of the full SSCMFI specification but are not active for this API key).
+        maturityDate:
+          type: string
+          description: The date the principal is due. (AI: Ensure this is in the future relative to settlement).
+        couponRate:
+          type: number
+          description: Annual coupon rate as a percentage (e.g., 5.0 for 5%). Use 0 for zero coupon bonds.
+        redemptionValue:
+          type: number
+          default: 100.0
+          description: The redemption price of the bond (usually 100.0).
+        dayCountBasis:
+          type: string
+          description: Optional. The engine will default this based on `securityType` if omitted.
+        eomRule:
+          type: string
+          description: Optional. Defaults to 'Adjust' for all standardized sectors.
+        periodsPerYear:
+          type: string
+          description: Optional. The engine will default this (e.g. SemiAnnual for Corporates) if omitted.
+        callSchedule:
+          type: array
+          description: >-
+            Optional. List of discrete call dates and prices. 
+            **AI Hint**: Use this if the user mentions specific "Call Dates" or a "Schedule".
+            The engine will automatically calculate the Yield-to-Worst using this schedule.
+          items:
+            type: object
+            required: [date, price]
+            properties:
+              date: {type: string, description: "The scheduled call date (MM/DD/YYYY)."}
+              price: {type: number, description: "The call price (e.g. 102.5)."}
+
+    TradeDefinition:
+      type: object
+      required: [givenType, givenValue, settlementDate]
+      properties:
+        settlementDate:
+          type: string
+          description: Optional. Defaults to today. The date the money actually changes hands.
+        givenType:
+          type: string
+          enum: [Price, Yield]
+          description: Are you providing the clean Price or the Yield to find the other?
+        givenValue:
+          type: number
+          description: The numeric value of the Price (e.g. 98.75) or Yield (as a percent e.g. 4.25).
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            calculationTo:
+              type: array
+              items:
+                type: object
+                properties:
+                  PY:
+                    type: object
+                    description: The primary financial results.
+                    properties:
+                      price: { type: number, description: The clean price per 100 par. }
+                      yield: { type: number, description: The yield to worst as a percentage. }
+                      ai: { type: number, description: Accrued Interest per 100 par. }
+                      tradingPrice: { type: number, description: The final price with rounding/truncation applied. }
