@@ -39,13 +39,14 @@ The easiest way to use this server is to run it directly from GitHub. This avoid
 
 **Claude Desktop Configuration:**
 Add this snippet to your `claude_desktop_config.json`:
+*(Usually at `%APPDATA%\Claude\claude_desktop_config.json`. If using the Win 11 App Store version, check `%LOCALAPPDATA%\Packages\Anthropic.ClaudeDesktop_...\LocalCache\Roaming\Claude\`)*
 
 ```json
 {
   "mcpServers": {
     "sscmfi-bond-mcp": {
       "command": "npx",
-      "args": ["-y", "github:sscmfi/sscmfi-bond-mcp"]
+      "args": ["-y", "https://github.com/sscmfi/sscmfi-bond-mcp/archive/refs/heads/main.tar.gz"]
     }
   }
 }
