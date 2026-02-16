@@ -45,7 +45,7 @@ Add this snippet to your `claude_desktop_config.json`:
   "mcpServers": {
     "sscmfi-bond-mcp": {
       "command": "npx",
-      "args": ["-y", "tsx", "github:sscmfi/sscmfi-bond-mcp/index.ts"]
+      "args": ["-y", "github:sscmfi/sscmfi-bond-mcp"]
     }
   }
 }

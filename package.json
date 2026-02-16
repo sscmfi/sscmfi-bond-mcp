@@ -4,6 +4,7 @@
     "description": "MCP Server for the SSCMFI Bond Math Engine",
     "type": "module",
     "main": "index.ts",
+    "bin": "index.ts",
     "scripts": {
         "start": "npx tsx index.ts"
     },
