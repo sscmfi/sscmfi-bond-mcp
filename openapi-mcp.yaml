@@ -6,7 +6,7 @@ info:
     **AI Instructions:** Use these tools to perform high-precision bond math. 
     Do not attempt to calculate accrued interest, yield, or price manually. 
     Always rely on the engine for industry standard accuracy.
-  version: 1.1.0
+  version: 1.1.2
 
 servers:
   - url: https://api.sscmfi.com/api/sscmfiMCPAPI
