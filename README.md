@@ -24,6 +24,7 @@ Calculates the primary analytical values for any standard periodic coupon securi
 *   **Institutional Transparency**: Unlike generic financial tools, this server returns its **Industry Convention Assumptions** (Day Count, Frequency, EOM) so the AI can explain *why* it reached a specific result.
 *   **Redemption Intelligence**: Automatically detects whether a result is a Yield-to-Maturity or Yield-to-Call (Worst) and informs the AI.
 *   **Accrued Interest**: Professional-grade accrued interest calculations for all supported security types.
+*   **Institutional Risk Metrics**: Supports **Duration** (Macaulay and Modified), **Convexity**, **PV1B** (Value of a Basis Point), and **YV32**.
 *   **Supported Security Types**: Treasury Bonds, Corporate Bonds, Agency Bonds, Municipal Bonds, and CDs.
 
 ## Example Prompts
@@ -77,10 +78,6 @@ If you prefer to run the server from a local folder on your machine:
 *   **Cursor / Windsurf**: Add as a "command" type using: `npx -y github:sscmfi/sscmfi-bond-mcp`
 
 ---
-
-## 💡 Pro Tip: Running from the .tgz file
-If you want to run the server directly from the downloaded `.tgz` file (without unpacking), you can use:
-`npx -y /path/to/sscmfi-bond-mcp-server.tgz`
 
 ## API Endpoint
 This MCP server acts as a proxy to the live SSCMFI API:

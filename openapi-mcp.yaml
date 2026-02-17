@@ -5,7 +5,7 @@ info:
     Industry standard, expert-level financial calculation engine for fixed income (bond) analytics. 
     **AI Instructions:** Use these tools to perform high-precision bond math. 
     Do not attempt to calculate accrued interest, yield, or price manually. 
-    Always rely on the engine for C-faithful, industry standard accuracy.
+    Always rely on the engine for industry standard accuracy.
   version: 1.1.0
 
 servers:
@@ -29,14 +29,51 @@ paths:
               $ref: '#/components/schemas/CalculationRequest'
       responses:
         '200':
-          description: Success
+          description: Successful execution
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponse'
+                $ref: '#/components/schemas/JsonRpcResponse'
+              example:
+                jsonrpc: "2.0"
+                id: "123"
+                result:
+                  content:
+                    - type: "text"
+                      text: "{\"success\":true,\"data\":{...}}"
+        '422':
+          description: Validation Error (Simplified String)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JsonRpcResponse'
+              example:
+                jsonrpc: "2.0"
+                id: "123"
+                result:
+                  content:
+                    - type: "text"
+                      text: "Error #2161: Invalid Date"
 
 components:
   schemas:
+    JsonRpcResponse:
+      type: object
+      required: [jsonrpc, id, result]
+      properties:
+        jsonrpc: { type: string, example: "2.0" }
+        id: { type: string }
+        result:
+          type: object
+          properties:
+            content:
+              type: array
+              items:
+                type: object
+                properties:
+                  type: { type: string, enum: [text] }
+                  text: { type: string, description: "JSON-encoded string containing the actual engine result or a simplified error string." }
+
     CalculationRequest:
       type: object
       required: [securityDefinition, tradeDefinition]
@@ -145,6 +182,15 @@ components:
                       price: { type: number, description: The clean price per 100 par. }
                       yield: { type: number, description: The yield to worst as a percentage. }
                       ai: { type: number, description: Accrued Interest per 100 par. }
+                  PYAnalytics:
+                    type: object
+                    description: Institutional risk metrics (Duration, Convexity, Sensitivity).
+                    properties:
+                      approxDuration: { type: number, description: Macaulay Duration. }
+                      approxModDuration: { type: number, description: Modified Duration. }
+                      approxConvexity: { type: number, description: Convexity indicating price-yield curve curvature. }
+                      pv1b: { type: number, description: Present Value of a Basis Point (Dollar value of a 0.01% move). }
+                      yv32: { type: number, description: Yield value of a 32nd. }
         metadata:
           type: object
           properties:
@@ -153,6 +199,8 @@ components:
               description: The institutional defaults applied by the resolver.
               properties:
                 tradeDate: { type: string, format: date }
+                settlementDate: { type: string, format: date, description: "The calculated settlement date used." }
                 dayCountBasis: { type: string }
                 periodsPerYear: { type: string }
                 eomRule: { type: string }
+                redemptionValue: { type: number }
