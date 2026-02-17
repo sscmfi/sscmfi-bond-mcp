@@ -19,7 +19,7 @@ const API_URL = "https://api.sscmfi.com/api/sscmfiMCPAPI";
 const server = new Server(
     {
         name: "sscmfi-math-engine",
-        version: "1.1.0",
+        version: "1.1.2",
     },
     {
         capabilities: {
@@ -122,6 +122,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                             totalSettlement: result.PY.price + (result.PY.ai || 0),
                             settlementDate: payload.settlementDate,
                             redemptionInfo: result.redemptionInfo,
+                            PYAnalytics: result.PYAnalytics,
                             industryConventionAssumptions: appliedDefaults
                         }, null, 2),
                     },
