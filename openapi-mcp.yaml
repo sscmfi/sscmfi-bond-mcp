@@ -29,31 +29,29 @@ paths:
               $ref: '#/components/schemas/CalculationRequest'
       responses:
         '200':
-          description: Successful execution
+          description: Successful execution (or handled engine error)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/JsonRpcResponse'
-              example:
-                jsonrpc: "2.0"
-                id: "123"
-                result:
-                  content:
-                    - type: "text"
-                      text: "{\"success\":true,\"data\":{...}}"
-        '422':
-          description: Validation Error (Simplified String)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JsonRpcResponse'
-              example:
-                jsonrpc: "2.0"
-                id: "123"
-                result:
-                  content:
-                    - type: "text"
-                      text: "Error #2161: Invalid Date"
+              examples:
+                success:
+                  value:
+                    jsonrpc: "2.0"
+                    id: "123"
+                    result:
+                      content:
+                        - type: "text"
+                          text: "{\"success\":true,\"data\":{...}}"
+                failure:
+                  value:
+                    jsonrpc: "2.0"
+                    id: "123"
+                    result:
+                      isError: true
+                      content:
+                        - type: "text"
+                          text: "Error #5014: Date Validation Error (February 30th)"
 
 components:
   schemas:
@@ -66,6 +64,7 @@ components:
         result:
           type: object
           properties:
+            isError: { type: boolean, description: "Optional. True if the engine calculation failed." }
             content:
               type: array
               items:

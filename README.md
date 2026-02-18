@@ -17,7 +17,7 @@ The server provides a specialized tool for core bond math:
 ### `calculate_bond_periodic`
 Calculates the primary analytical values for any standard periodic coupon security.
 *   **Inputs**: Security Type (Treasury, Corporate, etc.), Maturity Date, Coupon Rate, Settlement Date, and either Price (to find Yield) or Yield (to find Price).
-*   **Outputs**: Clean Price, Yield-to-Worst (including call schedule support), Accrued Interest, and Trading Price.
+*   **Outputs**: Clean Price, Yield-to-Worst (including call schedule support), Accrued Interest, Trading Price, and **Institutional Risk Metrics** (Duration, Convexity, PV1B).
 
 ## Features (Full Fidelity)
 *   **Price & Yield Analytics**: High-precision conversions between price and yield.
@@ -32,6 +32,7 @@ Once installed, you can ask Claude questions like:
 *   "What is the yield of a Corporate bond with a 4.5% coupon maturing on 12/15/2030, priced at 98.25 for settlement today?"
 *   "If I want to buy a Treasury bond maturing on 02/15/2029 with a 3% coupon at a 4.2% yield, what should the price be?"
 *   "Calculate the accrued interest for a Municipal bond maturing on 06/01/2035 with a 5.0% coupon."
+*   "Show me the Duration and PV1B for a 10Y Treasury bond priced at 99."
 
 ## Installation
 

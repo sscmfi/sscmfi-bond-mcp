@@ -107,9 +107,38 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
             const response = await axios.post(API_URL, payload);
 
-            // Simplify the response for the LLM while retaining institutional fidelity
-            const result = response.data.data.calculationTo[0];
-            const appliedDefaults = response.data.metadata?.appliedDefaults || {};
+            // HANDLE LOGICAL ERRORS (isError: true or errorInfo present in result)
+            const resultBody = response.data.result;
+            const isLogicalError = resultBody?.isError || response.data.errorInfo || response.data.success === false;
+
+            if (isLogicalError) {
+                const innerText = resultBody?.content?.[0]?.text;
+                let detail = "Unknown Engine Error";
+
+                if (innerText) {
+                    try {
+                        const parsed = JSON.parse(innerText);
+                        detail = parsed.errorInfo?.errorMessage || innerText;
+                    } catch (e) {
+                        detail = innerText;
+                    }
+                } else if (response.data.errorInfo) {
+                    detail = response.data.errorInfo.errorMessage || JSON.stringify(response.data.errorInfo);
+                }
+
+                return {
+                    content: [{ type: "text", text: `Error from SSCMFI Engine: ${detail}` }],
+                    isError: true,
+                };
+            }
+
+            // SUCCESS PATH
+            const result = response.data.data?.calculationTo?.[0] || response.data.result?.data?.calculationTo?.[0];
+            if (!result) {
+                throw new Error("Invalid response format from engine");
+            }
+
+            const appliedDefaults = response.data.metadata?.appliedDefaults || response.data.result?.metadata?.appliedDefaults || {};
 
             return {
                 content: [
@@ -130,7 +159,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             };
         } catch (error: any) {
             // Provide a detailed error message from the SSCMFI Engine if available
-            const engineError = error.response?.data?.errorInfo?.errorMessage;
+            const engineError = error.response?.data?.errorInfo?.errorMessage || error.response?.data?.result?.errorInfo?.errorMessage;
             const apiError = error.response?.data?.error || error.response?.data?.message;
             const detail = engineError || apiError || error.message;
 
