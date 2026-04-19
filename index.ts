@@ -1,4 +1,3 @@
-#!/usr/bin/env tsx
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
@@ -18,8 +17,8 @@ const API_URL = "https://api.sscmfi.com/api/sscmfiMCPAPI";
 
 const server = new Server(
     {
-        name: "sscmfi-math-engine",
-        version: "1.1.2",
+        name: "sscmfi-bond-mcp",
+        version: "1.2.0",
     },
     {
         capabilities: {
@@ -45,7 +44,7 @@ const PERIODIC_TOOL = {
             },
             maturityDate: {
                 type: "string",
-                description: "Required. The date the bond expires. Use MM/DD/YYYY format for maximum accuracy."
+                description: "Required. The date the bond expires (MM/DD/YYYY)."
             },
             couponRate: {
                 type: "number",
@@ -62,7 +61,7 @@ const PERIODIC_TOOL = {
             },
             settlementDate: {
                 type: "string",
-                description: "Required. The date the money actually changes hands. Use MM/DD/YYYY format for maximum accuracy."
+                description: "Required. The date the money actually changes hands (MM/DD/YYYY)."
             },
             callSchedule: {
                 type: "array",
@@ -94,80 +93,43 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         try {
             const { securityType, maturityDate, couponRate, givenType, givenValue, settlementDate, callSchedule } = request.params.arguments as any;
 
-            // Flatten the payload for the SSCMFI Resolver
+            // Construct the internal SSCMFI JSON format
             const payload = {
-                securityType,
-                maturityDate,
-                couponRate,
-                givenType,
-                givenValue,
-                settlementDate,
-                callSchedule
+                securityDefinition: {
+                    securityType: securityType,
+                    paymentType: "periodic",
+                    maturityDate: maturityDate,
+                    couponRate: couponRate,
+                    callSchedule: callSchedule // Mapped by PHP proxy to callRedemptions
+                },
+                tradeDefinition: {
+                    settlementDate: settlementDate || new Date().toLocaleDateString('en-US'),
+                    givenType: givenType,
+                    givenValue: givenValue,
+                }
             };
 
             const response = await axios.post(API_URL, payload);
 
-            // HANDLE LOGICAL ERRORS (isError: true or errorInfo present in result)
-            const resultBody = response.data.result;
-            const isLogicalError = resultBody?.isError || response.data.errorInfo || response.data.success === false;
-
-            if (isLogicalError) {
-                const innerText = resultBody?.content?.[0]?.text;
-                let detail = "Unknown Engine Error";
-
-                if (innerText) {
-                    try {
-                        const parsed = JSON.parse(innerText);
-                        detail = parsed.errorInfo?.errorMessage || innerText;
-                    } catch (e) {
-                        detail = innerText;
-                    }
-                } else if (response.data.errorInfo) {
-                    detail = response.data.errorInfo.errorMessage || JSON.stringify(response.data.errorInfo);
-                }
-
-                return {
-                    content: [{ type: "text", text: `Error from SSCMFI Engine: ${detail}` }],
-                    isError: true,
-                };
-            }
-
-            // SUCCESS PATH
-            const result = response.data.data?.calculationTo?.[0] || response.data.result?.data?.calculationTo?.[0];
-            if (!result) {
-                throw new Error("Invalid response format from engine");
-            }
-
-            const appliedDefaults = response.data.metadata?.appliedDefaults || response.data.result?.metadata?.appliedDefaults || {};
+            // 8. Find the Best (Worst Case) Result
+            // The engine identifies the 'Worst' scenario (Maturity vs all Calls)
+            const calcs = response.data.data.calculationTo;
+            const result = calcs.find((c: any) => c.redemptionInfo?.worstIndicator === 'Worst') || calcs[0];
 
             return {
                 content: [
                     {
                         type: "text",
-                        text: JSON.stringify({
-                            price: result.PY.price,
-                            yield: result.PY.yield,
-                            accruedInterest: result.PY.ai,
-                            totalSettlement: result.PY.price + (result.PY.ai || 0),
-                            settlementDate: payload.settlementDate,
-                            redemptionInfo: result.redemptionInfo,
-                            PYAnalytics: result.PYAnalytics,
-                            industryConventionAssumptions: appliedDefaults
-                        }, null, 2),
+                        text: JSON.stringify(response.data, null, 2),
                     },
                 ],
             };
         } catch (error: any) {
-            // Provide a detailed error message from the SSCMFI Engine if available
-            const engineError = error.response?.data?.errorInfo?.errorMessage || error.response?.data?.result?.errorInfo?.errorMessage;
-            const apiError = error.response?.data?.error || error.response?.data?.message;
-            const detail = engineError || apiError || error.message;
-
             return {
                 content: [
                     {
                         type: "text",
-                        text: `Error from SSCMFI Engine: ${detail}`,
+                        text: `Error: ${error.response?.data?.error || error.message}`,
                     },
                 ],
                 isError: true,
@@ -186,6 +148,5 @@ async function main() {
 
 main().catch((error) => {
     console.error("Fatal error in main():", error);
-    // @ts-ignore
     process.exit(1);
 });

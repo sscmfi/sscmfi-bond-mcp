@@ -6,7 +6,7 @@ info:
     **AI Instructions:** Use these tools to perform high-precision bond math. 
     Do not attempt to calculate accrued interest, yield, or price manually. 
     Always rely on the engine for industry standard accuracy.
-  version: 1.1.2
+  version: 1.2.0
 
 servers:
   - url: https://api.sscmfi.com/api/sscmfiMCPAPI
@@ -29,50 +29,14 @@ paths:
               $ref: '#/components/schemas/CalculationRequest'
       responses:
         '200':
-          description: Successful execution (or handled engine error)
+          description: Success
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JsonRpcResponse'
-              examples:
-                success:
-                  value:
-                    jsonrpc: "2.0"
-                    id: "123"
-                    result:
-                      content:
-                        - type: "text"
-                          text: "{\"success\":true,\"data\":{...}}"
-                failure:
-                  value:
-                    jsonrpc: "2.0"
-                    id: "123"
-                    result:
-                      isError: true
-                      content:
-                        - type: "text"
-                          text: "Error #5014: Date Validation Error (February 30th)"
+                $ref: '#/components/schemas/SuccessResponse'
 
 components:
   schemas:
-    JsonRpcResponse:
-      type: object
-      required: [jsonrpc, id, result]
-      properties:
-        jsonrpc: { type: string, example: "2.0" }
-        id: { type: string }
-        result:
-          type: object
-          properties:
-            isError: { type: boolean, description: "Optional. True if the engine calculation failed." }
-            content:
-              type: array
-              items:
-                type: object
-                properties:
-                  type: { type: string, enum: [text] }
-                  text: { type: string, description: "JSON-encoded string containing the actual engine result or a simplified error string." }
-
     CalculationRequest:
       type: object
       required: [securityDefinition, tradeDefinition]
@@ -107,8 +71,7 @@ components:
             (Standard types like Discount, Interest at Maturity (IAM), Stepped, Multistep, Payment-In-Kind (PIK), and Part-PIK are part of the full SSCMFI specification but are not active for this API key).
         maturityDate:
           type: string
-          format: date
-          description: The date the principal is due (MM/DD/YYYY). (AI: Ensure this is in the future relative to settlement).
+          description: "The date the principal is due. Required format: MM/DD/YYYY (e.g., 01/05/2030). AI: Must use leading zeros and 4-digit years. (Ensure this is in the future relative to settlement)."
         couponRate:
           type: number
           description: Annual coupon rate as a percentage (e.g., 5.0 for 5%). Use 0 for zero coupon bonds.
@@ -135,7 +98,7 @@ components:
             type: object
             required: [date, price]
             properties:
-              date: {type: string, description: "The scheduled call date (MM/DD/YYYY)."}
+              date: {type: string, description: "The scheduled call date. Required format: MM/DD/YYYY."}
               price: {type: number, description: "The call price (e.g. 102.5)."}
 
     TradeDefinition:
@@ -144,7 +107,7 @@ components:
       properties:
         settlementDate:
           type: string
-          description: Optional. Defaults to today. The date the money actually changes hands.
+          description: "Optional. Defaults to today. The date the money actually changes hands. Required format: MM/DD/YYYY (e.g., 07/04/2025)."
         givenType:
           type: string
           enum: [Price, Yield]
@@ -171,7 +134,7 @@ components:
                     description: Information about the maturity/call date used for the yield-to-worst calculation.
                     properties:
                       redemptionType: { type: string, enum: [Maturity, Call, Put] }
-                      redemptionDate: { type: string, format: date, description: "MM/DD/YYYY" }
+                      redemptionDate: { type: string, description: "MM/DD/YYYY" }
                       redemptionValue: { type: number, description: The redemption price used. }
                       worstIndicator: { type: string, description: "e.g., 'Worst'" }
                   PY:
@@ -188,18 +151,10 @@ components:
                       approxDuration: { type: number, description: Macaulay Duration. }
                       approxModDuration: { type: number, description: Modified Duration. }
                       approxConvexity: { type: number, description: Convexity indicating price-yield curve curvature. }
-                      pv1b: { type: number, description: Present Value of a Basis Point (Dollar value of a 0.01% move). }
-                      yv32: { type: number, description: Yield value of a 32nd. }
+                      pv1b: { type: number, description: Present Value of a Basis Point (0.01%). }
         metadata:
           type: object
           properties:
-            industryConventionAssumptions:
-              type: object
-              description: The institutional defaults applied by the resolver.
-              properties:
-                tradeDate: { type: string, format: date }
-                settlementDate: { type: string, format: date, description: "The calculated settlement date used." }
-                dayCountBasis: { type: string }
-                periodsPerYear: { type: string }
-                eomRule: { type: string }
-                redemptionValue: { type: number }
+            disclaimer: { type: string, description: "Legal financial disclaimer." }
+            engineVersion: { type: string }
+            sscmfiMcpVersion: { type: string, description: "The version of the MCP system used." }
